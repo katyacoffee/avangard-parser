@@ -1,19 +1,29 @@
-from task import init_repo, get_numbers
+from task import *
 
 
 def execute() -> list[str]:
-    print('Enter company name:')
-    company_name = input()
-    repo = init_repo()
-    all_contact_pages = repo.get_contact_pages_for_company(company_name)
-    if len(all_contact_pages) == 0:
-        print('Error: company ' + company_name + ' not found')
-        return []
-    numbers = []
-    for page in all_contact_pages:
-        numbers.extend(get_numbers(page))
-    print(numbers)
-    return numbers
+    # TODO: open json file with {'orgn': true/false}
+    knownOgrns = {} # TODO: write json here
+    newOgrns = {}
+    res = []
+    ogrn_list = get_ogrn_list()
+    print(ogrn_list)
+    for ogrn in ogrn_list:
+        if ogrn in knownOgrns.keys():
+            if knownOgrns[ogrn]:
+                res.append(ogrn)
+            continue
+        hi_tech_complex = get_info('https://trudvsem.ru/iblocks/prr_public_company_profile?companyId=' + ogrn)
+        # print(hiTechComplex)
+        newOgrns[ogrn] = hi_tech_complex
+        if hi_tech_complex == 'True':
+            res.append(ogrn)
+    knownOgrns.update(newOgrns)
+    # TODO: open log.txt <- ДОписать сюда дату, время и длину newOgrns
+    # TODO: write in json file with {'orgn': true/false}
+    print(res)
+    # TODO: rewrite res in hiTexComplex.txt file
+    return res
 
 
 if __name__ == '__main__':
