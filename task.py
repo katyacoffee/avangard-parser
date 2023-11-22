@@ -15,16 +15,18 @@ headers = {
     "X-Amzn-Trace-Id": "Root=1-6556617a-54ba8625589b120c154b7431"
     }
 
-def get_page(address: str) -> str:
+
+def get_pages(addresses: dict[str, str]) -> dict[str, str]:
+    resps = {}
     with sess() as s:
-        #header_resp = s.get('https://httpbin.org/headers', timeout=2)
-        #headers = json.loads(header_resp.text)
-        resp = s.get(address, timeout=2, headers=headers)
-        return resp.text
+        for ogrn in addresses.keys():
+            resp = s.get(addresses[ogrn], timeout=2, headers=headers)
+            resps[ogrn] = resp.text
+        return resps
 
 
 def download_dataset():
-    URL = "https://trudvsem.ru/csv/company.csv"
+    URL = "https://opendata.trudvsem.ru/csv/company.csv"
     response = requests.get(URL, headers=headers)
     open("company.csv", "wb").write(response.content)
 
@@ -42,13 +44,12 @@ def get_ogrn_list() -> list[str]:
     i = 0
     orgn_index = 0
 
-    debug_limit = 20 #TODO: убрать
+    # debug_limit = 8000
     try:
         with open(file) as f:
             for line in f:
                 if i == 0:
                     i = 1
-                    print(line)
                     headers = line.split('|')
                     for index in range(0, len(headers)):
                         if headers[index].lower() == 'ogrn':
@@ -58,18 +59,22 @@ def get_ogrn_list() -> list[str]:
                 ogrn = line.split('|')[orgn_index]
                 ogrns.append(ogrn)
                 i += 1
-                if i == debug_limit:
-                    break
+                # if i == debug_limit:
+                #      break
     except FileNotFoundError:
-        ogrns = [] #'1037700038254'
+        ogrns = []
     return ogrns
 
 
-def get_info(page: str) -> str:
-    page_text = get_page(page)
-    if page_text == "":
-        return ''
-    info = json.loads(page_text)
-    data = info.get('data', {})
-    res = data.get('hiTechComplex', 'False')
-    return str(res)
+def get_info(pages: dict[str, str]) -> dict[str, str]:
+    page_texts = get_pages(pages)
+    result = {}
+    for ogrn in page_texts.keys():
+        page_text = page_texts[ogrn]
+        if page_text == "":
+            result[ogrn] = ''
+        info = json.loads(page_text)
+        data = info.get('data', {})
+        res = data.get('hiTechComplex', 'False')
+        result[ogrn] = str(res)
+    return result
